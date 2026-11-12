@@ -14,8 +14,8 @@ android {
         applicationId = "app.pocketfree"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.2.1"
     }
 
     // One fixed key for every build, so a new APK installs over the old one and keeps your data.

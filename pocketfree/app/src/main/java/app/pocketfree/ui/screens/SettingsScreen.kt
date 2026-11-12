@@ -1,6 +1,13 @@
 package app.pocketfree.ui.screens
 
+import android.os.Build
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,10 +29,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import app.pocketfree.data.repo.SettingsRepository
+import app.pocketfree.domain.AccentTheme
 import app.pocketfree.domain.AppCurrency
 import app.pocketfree.domain.ThemeMode
 import app.pocketfree.ui.components.*
 import app.pocketfree.ui.nav.Routes
+import app.pocketfree.ui.theme.Palettes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,16 +46,20 @@ import kotlinx.coroutines.launch
 class SettingsViewModel @Inject constructor(private val settings: SettingsRepository) : ViewModel() {
     val themeMode: StateFlow<ThemeMode> = settings.themeMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.SYSTEM)
+    val accent: StateFlow<AccentTheme> = settings.accent
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentTheme.TEAL)
     val currency: StateFlow<AppCurrency> = settings.defaultCurrency
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppCurrency.AED)
 
     fun setTheme(mode: ThemeMode) { viewModelScope.launch { settings.setThemeMode(mode) } }
+    fun setAccent(accent: AccentTheme) { viewModelScope.launch { settings.setAccent(accent) } }
     fun setCurrency(currency: AppCurrency) { viewModelScope.launch { settings.setDefaultCurrency(currency) } }
 }
 
 @Composable
 fun SettingsScreen(onOpen: (String) -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val theme by viewModel.themeMode.collectAsStateWithLifecycle()
+    val accent by viewModel.accent.collectAsStateWithLifecycle()
     val currency by viewModel.currency.collectAsStateWithLifecycle()
 
     ScreenScaffold(title = "Settings") { padding ->
@@ -61,6 +74,33 @@ fun SettingsScreen(onOpen: (String) -> Unit, viewModel: SettingsViewModel = hilt
                         selected = theme == mode,
                         onClick = { viewModel.setTheme(mode) },
                         label = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                    )
+                }
+            }
+
+            SettingsHeader("Color theme")
+            Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                AccentTheme.entries.filter { it != AccentTheme.DYNAMIC }.forEach { option ->
+                    val swatch = Palettes.of(option).primaryL
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(swatch)
+                            .then(if (accent == option) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier)
+                            .clickable { viewModel.setAccent(option) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (accent == option) Icon(Icons.Rounded.Check, contentDescription = option.label, tint = Color.White)
+                    }
+                }
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                Row(Modifier.padding(horizontal = 16.dp)) {
+                    FilterChip(
+                        selected = accent == AccentTheme.DYNAMIC,
+                        onClick = { viewModel.setAccent(AccentTheme.DYNAMIC) },
+                        label = { Text("Match my wallpaper colors") }
                     )
                 }
             }

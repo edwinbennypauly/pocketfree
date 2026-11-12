@@ -32,11 +32,12 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
         setContent {
             val themeMode by appViewModel.themeMode.collectAsStateWithLifecycle()
+            val accent by appViewModel.accent.collectAsStateWithLifecycle()
             val hideAmounts by appViewModel.hideAmounts.collectAsStateWithLifecycle()
             val biometricEnabled by appViewModel.biometricEnabled.collectAsStateWithLifecycle()
             val lockState by appViewModel.lockState.collectAsStateWithLifecycle()
 
-            PocketFreeTheme(themeMode) {
+            PocketFreeTheme(themeMode, accent) {
                 CompositionLocalProvider(LocalHideAmounts provides hideAmounts) {
                     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         when (lockState) {

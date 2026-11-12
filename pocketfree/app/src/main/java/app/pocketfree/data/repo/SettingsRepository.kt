@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import app.pocketfree.domain.AccentTheme
 import app.pocketfree.domain.AppCurrency
 import app.pocketfree.domain.PinHasher
 import app.pocketfree.domain.ThemeMode
@@ -28,6 +29,7 @@ class SettingsRepository @Inject constructor(
     private object Keys {
         val THEME = stringPreferencesKey("theme_mode")
         val CURRENCY = stringPreferencesKey("default_currency")
+        val ACCENT = stringPreferencesKey("accent_theme")
         val HIDE_AMOUNTS = booleanPreferencesKey("hide_amounts")
         val BIOMETRIC = booleanPreferencesKey("biometric_enabled")
         val PIN_HASH = stringPreferencesKey("pin_hash")
@@ -41,12 +43,17 @@ class SettingsRepository @Inject constructor(
             ?: ThemeMode.SYSTEM
     }
 
+    val accent: Flow<AccentTheme> = data.map { prefs ->
+        prefs[Keys.ACCENT]?.let { stored -> runCatching { AccentTheme.valueOf(stored) }.getOrNull() } ?: AccentTheme.TEAL
+    }
+
     val defaultCurrency: Flow<AppCurrency> = data.map { AppCurrency.fromCode(it[Keys.CURRENCY]) }
     val hideAmounts: Flow<Boolean> = data.map { it[Keys.HIDE_AMOUNTS] ?: false }
     val biometricEnabled: Flow<Boolean> = data.map { it[Keys.BIOMETRIC] ?: false }
     val pinConfigured: Flow<Boolean> = data.map { it[Keys.PIN_HASH] != null && it[Keys.PIN_SALT] != null }
 
     suspend fun setThemeMode(mode: ThemeMode) { context.settingsDataStore.edit { it[Keys.THEME] = mode.name } }
+    suspend fun setAccent(accent: AccentTheme) { context.settingsDataStore.edit { it[Keys.ACCENT] = accent.name } }
     suspend fun setDefaultCurrency(currency: AppCurrency) { context.settingsDataStore.edit { it[Keys.CURRENCY] = currency.code } }
     suspend fun setHideAmounts(hide: Boolean) { context.settingsDataStore.edit { it[Keys.HIDE_AMOUNTS] = hide } }
     suspend fun setBiometricEnabled(enabled: Boolean) { context.settingsDataStore.edit { it[Keys.BIOMETRIC] = enabled } }

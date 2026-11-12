@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.pocketfree.data.repo.LedgerRepository
 import app.pocketfree.data.repo.SettingsRepository
+import app.pocketfree.domain.AccentTheme
 import app.pocketfree.domain.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -26,6 +27,8 @@ class AppViewModel @Inject constructor(
 
     val themeMode: StateFlow<ThemeMode> = settings.themeMode
         .stateIn(viewModelScope, SharingStarted.Eagerly, ThemeMode.SYSTEM)
+    val accent: StateFlow<AccentTheme> = settings.accent
+        .stateIn(viewModelScope, SharingStarted.Eagerly, AccentTheme.TEAL)
     val hideAmounts: StateFlow<Boolean> = settings.hideAmounts
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val biometricEnabled: StateFlow<Boolean> = settings.biometricEnabled

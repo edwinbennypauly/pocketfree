@@ -7,6 +7,11 @@ enum class TransactionType { EXPENSE, INCOME }
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** Colour themes. DYNAMIC uses the phone's wallpaper colours on Android 12+ and falls back to TEAL. */
+enum class AccentTheme(val label: String) {
+    TEAL("Teal"), BLUE("Blue"), PURPLE("Purple"), GREEN("Green"), ORANGE("Orange"), ROSE("Rose"), DYNAMIC("Wallpaper")
+}
+
 enum class Frequency { DAILY, WEEKLY, MONTHLY, YEARLY }
 
 /** Budget rows with this category id are the overall monthly budget. */

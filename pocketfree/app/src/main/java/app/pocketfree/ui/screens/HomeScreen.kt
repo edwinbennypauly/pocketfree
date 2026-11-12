@@ -13,7 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -160,20 +163,23 @@ fun HomeScreen(
 
 @Composable
 private fun BalanceCard(ui: HomeUi) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+    val scheme = MaterialTheme.colorScheme
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Brush.linearGradient(listOf(scheme.primaryContainer, lerp(scheme.primaryContainer, scheme.primary, 0.5f))))
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Total balance", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Text("Total balance", style = MaterialTheme.typography.labelLarge, color = scheme.onPrimaryContainer)
             Text(
                 moneyText(ui.balanceMinor, ui.currency.code),
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = scheme.onPrimaryContainer
             )
-            Text("All income minus all expenses", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Text("All income minus all expenses", style = MaterialTheme.typography.bodySmall, color = scheme.onPrimaryContainer)
         }
     }
 }
