@@ -14,12 +14,27 @@ android {
         applicationId = "app.pocketfree"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
+    }
+
+    // One fixed key for every build, so a new APK installs over the old one and keeps your data.
+    // This is a personal sideloading key. Keep the GitHub repository PRIVATE.
+    signingConfigs {
+        create("personal") {
+            storeFile = file("pocketfree.jks")
+            storePassword = "pocketfree-local"
+            keyAlias = "pocketfree"
+            keyPassword = "pocketfree-local"
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("personal")
+        }
         release {
+            signingConfig = signingConfigs.getByName("personal")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -50,6 +65,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.fragment)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

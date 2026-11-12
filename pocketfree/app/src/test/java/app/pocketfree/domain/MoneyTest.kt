@@ -13,6 +13,13 @@ class MoneyTest {
         assertEquals(50L, Money.parseToMinor(".5"))
     }
 
+    @Test fun whatTheKeypadCanProduceIsAlwaysParsable() {
+        assertEquals(1200L, Money.parseToMinor("12."))
+        assertEquals(0L, Money.parseToMinor("0."))
+        assertEquals(1210L, Money.parseToMinor("12.1"))
+        assertEquals(9_999_999_999_999L, Money.parseToMinor("99999999999.99"))
+    }
+
     @Test fun zeroParsesToZero() {
         assertEquals(0L, Money.parseToMinor("0"))
         assertEquals(0L, Money.parseToMinor("0.00"))

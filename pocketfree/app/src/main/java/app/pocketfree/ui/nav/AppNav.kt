@@ -1,5 +1,6 @@
 package app.pocketfree.ui.nav
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -19,23 +20,32 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import app.pocketfree.ui.screens.AddEditScreen
+import app.pocketfree.ui.screens.AnalyticsScreen
+import app.pocketfree.ui.screens.BackupScreen
+import app.pocketfree.ui.screens.BudgetsScreen
+import app.pocketfree.ui.screens.CategoriesScreen
 import app.pocketfree.ui.screens.HomeScreen
-import app.pocketfree.ui.screens.PlaceholderScreen
+import app.pocketfree.ui.screens.RatesScreen
+import app.pocketfree.ui.screens.RecurringScreen
+import app.pocketfree.ui.screens.SecurityScreen
 import app.pocketfree.ui.screens.SettingsScreen
+import app.pocketfree.ui.screens.TransactionsScreen
+import app.pocketfree.domain.TransactionType
 
 enum class TopDest(val route: String, val label: String, val icon: ImageVector) {
-    Home("home", "Home", Icons.Rounded.Home),
-    Transactions("transactions", "History", Icons.Rounded.ReceiptLong),
-    Budgets("budgets", "Budgets", Icons.Rounded.Savings),
-    Analytics("analytics", "Analytics", Icons.Rounded.BarChart),
-    Settings("settings", "Settings", Icons.Rounded.Settings)
+    Home(Routes.HOME, "Home", Icons.Rounded.Home),
+    Transactions(Routes.TRANSACTIONS, "History", Icons.Rounded.ReceiptLong),
+    Budgets(Routes.BUDGETS, "Budgets", Icons.Rounded.Savings),
+    Analytics(Routes.ANALYTICS, "Analytics", Icons.Rounded.BarChart),
+    Settings(Routes.SETTINGS, "Settings", Icons.Rounded.Settings)
 }
-
-const val ROUTE_ADD = "add"
 
 @Composable
 fun PocketFreeRoot() {
@@ -44,20 +54,23 @@ fun PocketFreeRoot() {
     val current = backStack?.destination?.route
     val showBars = TopDest.entries.any { it.route == current }
 
+    fun goTop(route: String) {
+        nav.navigate(route) {
+            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showBars) {
                 NavigationBar {
                     TopDest.entries.forEach { dest ->
                         NavigationBarItem(
                             selected = current == dest.route,
-                            onClick = {
-                                nav.navigate(dest.route) {
-                                    popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
+                            onClick = { goTop(dest.route) },
                             icon = { Icon(dest.icon, contentDescription = null) },
                             label = { Text(dest.label, maxLines = 1) }
                         )
@@ -67,7 +80,7 @@ fun PocketFreeRoot() {
         },
         floatingActionButton = {
             if (showBars) {
-                FloatingActionButton(onClick = { nav.navigate(ROUTE_ADD) }) {
+                FloatingActionButton(onClick = { nav.navigate(Routes.add(TransactionType.EXPENSE.name)) }) {
                     Icon(Icons.Rounded.Add, contentDescription = "Add transaction")
                 }
             }
@@ -75,27 +88,34 @@ fun PocketFreeRoot() {
     ) { inner ->
         NavHost(
             navController = nav,
-            startDestination = TopDest.Home.route,
+            startDestination = Routes.HOME,
             modifier = Modifier.padding(inner)
         ) {
-            composable(TopDest.Home.route) { HomeScreen() }
-            composable(TopDest.Transactions.route) {
-                PlaceholderScreen("Transactions", "Transaction history arrives in Phase 3.")
-            }
-            composable(TopDest.Budgets.route) {
-                PlaceholderScreen("Budgets", "Budgets arrive in Phase 4.")
-            }
-            composable(TopDest.Analytics.route) {
-                PlaceholderScreen("Analytics", "Analytics arrive in Phase 4.")
-            }
-            composable(TopDest.Settings.route) { SettingsScreen() }
-            composable(ROUTE_ADD) {
-                PlaceholderScreen(
-                    title = "Add transaction",
-                    note = "The transaction entry screen arrives in Phase 3.",
-                    onBack = { nav.popBackStack() }
+            composable(Routes.HOME) {
+                HomeScreen(
+                    onAdd = { type -> nav.navigate(Routes.add(type.name)) },
+                    onOpenTransactions = { goTop(Routes.TRANSACTIONS) },
+                    onOpenTransaction = { id -> nav.navigate(Routes.edit(id)) }
                 )
             }
+            composable(Routes.TRANSACTIONS) { TransactionsScreen(onEdit = { id -> nav.navigate(Routes.edit(id)) }) }
+            composable(Routes.BUDGETS) { BudgetsScreen() }
+            composable(Routes.ANALYTICS) { AnalyticsScreen() }
+            composable(Routes.SETTINGS) { SettingsScreen(onOpen = { route -> nav.navigate(route) }) }
+
+            composable(
+                route = Routes.TX_PATTERN,
+                arguments = listOf(
+                    navArgument("id") { type = NavType.LongType; defaultValue = -1L },
+                    navArgument("type") { type = NavType.StringType; defaultValue = TransactionType.EXPENSE.name }
+                )
+            ) { AddEditScreen(onClose = { nav.popBackStack() }) }
+
+            composable(Routes.CATEGORIES) { CategoriesScreen(onBack = { nav.popBackStack() }) }
+            composable(Routes.RATES) { RatesScreen(onBack = { nav.popBackStack() }) }
+            composable(Routes.RECURRING) { RecurringScreen(onBack = { nav.popBackStack() }) }
+            composable(Routes.BACKUP) { BackupScreen(onBack = { nav.popBackStack() }) }
+            composable(Routes.SECURITY) { SecurityScreen(onBack = { nav.popBackStack() }) }
         }
     }
 }

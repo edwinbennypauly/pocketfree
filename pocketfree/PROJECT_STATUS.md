@@ -1,52 +1,46 @@
 # PocketFree - Project Status
 
-_Last updated: 2026-11-10 (end of Phase 2)_
+_Last updated: 2026-11-12 (complete app written, awaiting first CI build)_
 
-## Current phase
-Phase 2 (project foundation) written. **Not yet compiled by anyone.** Next step: user pushes to GitHub, runs the workflow, and reports success or pastes errors.
+## State
+All spec features are implemented in code. **Pure logic is compiled and tested here (104 tests pass with Kotlin 2.0.20). The Android/Compose/Room/Hilt layer has NOT been compiled** (sandbox cannot reach Google Maven); it is verified only by syntax check and review. Expect a first CI build that may show compile errors to fix.
+
+## Architecture
+- Stack: Kotlin 2.0.20, Compose (BOM 2024.09.00), Material 3, Room 2.6.1 (DB v2), Hilt 2.52, DataStore, Navigation Compose, AndroidX Biometric. AGP 8.5.2, Gradle 8.9, JDK 17. minSdk 26, target 34.
+- `domain/` is pure Kotlin/JVM (no Android imports) and fully unit-tested: Money (Long minor units + BigDecimal), RateTable, Calculations, BudgetCalc, Filtering, TransactionValidator, AmountInput (keypad), Recurring, PinHasher, backup/ (Json, Csv, import validation + duplicate planner, BackupJson).
+- `data/`: Room entities/DAOs/mappers, SeedCallback, SettingsRepository (DataStore), LedgerRepository (single source for all screens via `snapshot` flow).
+- `ui/`: components (scaffold, charts on Canvas, keypad, pickers), screens + ViewModels, nav, lock screen.
+- Charts are custom Canvas (no chart library). No INTERNET permission. `allowBackup=false`.
 
 ## Decisions
-- Stack: Kotlin 2.0.20, Jetpack Compose (BOM 2024.09.00), Material 3, Room 2.6.1, Hilt 2.52, DataStore, Navigation Compose. AGP 8.5.2, Gradle 8.9, JDK 17.
-- minSdk 26, target/compile 34. Package `app.pocketfree`. App name PocketFree (placeholder).
-- Money = Long minor units; BigDecimal for conversion/format; never Double.
-- Budgets: `categoryId == 0` means overall monthly budget (no FK; avoids NULL-in-unique-index duplicates).
-- Categories referenced by id with ON DELETE RESTRICT; categories with history are archived, not deleted.
-- No INTERNET permission; `allowBackup=false`. Database is NOT encrypted (relies on Android app sandbox + device lock).
-- No destructive migration fallback; `exportSchema=true` writes to `app/schemas/`.
-- Bottom nav label for Transactions is "History" (fits 5 items); FAB is end-aligned above the bar.
-- APK built via GitHub Actions (sandbox cannot reach Google Maven/Gradle hosts, confirmed).
-- Charts will be drawn on Compose Canvas (no charting dependency).
+- Budgets: stored per month, carry forward until changed; limit 0 = cleared; category id 0 = overall budget.
+- Categories: renaming/recoloring never touches transactions (FK by id, RESTRICT); delete of a used category archives it.
+- Multi-currency: each transaction keeps original amount+currency; totals convert only with user-entered rates (direct or inverse); no rate = excluded and flagged, never guessed.
+- Import is a merge: new rows added, exact duplicates skipped by count (so genuine repeat purchases survive), budgets/rates in a JSON backup replace same month/category and same pair. All-or-nothing DB transaction.
+- CSV export neutralises spreadsheet formulas (leading ' on text starting with = + - @), import reverses it. CSV is written with a UTF-8 BOM for Excel.
+- Recurring: unique (ruleId, date) index + lastGenerated date prevent duplicates; generated on app start.
+- PIN: PBKDF2-HMAC-SHA256 (20k iterations, random salt), never stored plain. Locks after 30 s in background. No attempt lockout/backoff yet. **Database is NOT encrypted.**
+- Fixed personal signing key committed (`app/pocketfree.jks`) so APK updates install in place. Repo must stay private.
+- DB v1 (empty 0.1 foundation) -> v2 uses destructive rebuild only for version 1. Future versions need explicit Migrations.
 
-## Completed
-- Gradle/Hilt/Room/Compose configuration, version catalog, manifest, launcher icon
-- Light/dark/system theme (functional, persisted in DataStore)
-- Bottom navigation + Add route
-- Room schema v1: categories, transactions, budgets, exchange_rates; default categories seeded on first create
-- Settings: theme + default currency (functional, persisted)
-- Home "foundation check" card (proves DB + settings wiring)
-- Money/currency helpers; unit tests for Money and default categories
-- GitHub Actions workflow (tests + debug APK)
+## Done (spec section -> where)
+Dashboard, add/edit/delete/duplicate, history with search/filters/sort, categories (add/rename/icon/color/archive), budgets (overall + per category, warnings at 80%/over), analytics (stats, 4 charts, ranges incl. custom, month comparison), currencies + manual rates, backup/restore (CSV+JSON, SAF, preview, duplicate detection, errors), theme, PIN/biometric/hide amounts, recurring.
 
-## Verified so far
-- Money parse/format/rounding/overflow logic checked by running an equivalent Java port (all cases pass).
-- Kotlin brace/paren balance and XML well-formedness checked.
-- **NOT verified:** Kotlin compilation, Hilt/Room annotation processing, Gradle sync, unit tests in Gradle, running on a device.
+## Not built
+- Transaction calendar view (optional in spec).
+- Separate month-end summary screen (Analytics "This month/Last month" covers it).
+- PIN attempt lockout; database encryption (SQLCipher).
+- Instrumented (on-device) tests; UI tests. Backup/restore is tested at the logic level (parse/plan/duplicates/round-trip), not through Room.
 
-## Remaining
-- Phase 3: dashboard, add/edit/delete, history + search/filter/sort, category management
-- Phase 4: budgets, analytics, charts, month comparison
-- Phase 5: CSV/JSON export, import with preview + duplicate detection, exchange rates UI, privacy (PIN/biometric/hide amounts)
-- Phase 6: full tests and fixes
-- Phase 7: signed release APK + instructions
-- Extras: recurring transactions, calendar, month-end summary
+## Verified vs not
+- Verified (run): 104 unit tests incl. mutation check that tests really fail when logic is broken.
+- Syntax-checked only: all Android code.
+- Unverified: Gradle build, Room schema generation, Hilt graph, Compose rendering, on-device behaviour, R8 release build, biometric prompt, SAF flows.
 
-## Known issues / risks
-- First CI run may surface compile errors (code was never compiled). Expect a small fix round.
-- Theme flashes SYSTEM for one frame for users who forced a theme (initial StateFlow value).
-- `gradle-wrapper.jar` / `gradlew` not included (binary, cannot download here); CI uses setup-gradle instead.
+## Known risks
+- First CI run likely needs a fix round.
+- Budgets set in one currency and viewed after changing default currency need an exchange rate, otherwise that budget is hidden.
+- Release build uses R8; if it misbehaves use the debug APK.
 
-## Files (35)
-Root: settings.gradle.kts, build.gradle.kts, gradle.properties, gradle/libs.versions.toml, gradle/wrapper/gradle-wrapper.properties, .gitignore, README.md, PROJECT_STATUS.md, .github/workflows/build-apk.yml
-App: app/build.gradle.kts, app/proguard-rules.pro, AndroidManifest.xml, res (strings, themes x2, icon x3)
-Kotlin (app/src/main/java/app/pocketfree): PocketFreeApplication, MainActivity, di/AppModule, domain/{Money,Models}, data/db/{Entities,Daos,DefaultCategories,AppDatabase}, data/repo/SettingsRepository, ui/AppViewModel, ui/theme/{Color,Theme}, ui/nav/AppNav, ui/screens/{HomeScreen,SettingsScreen,PlaceholderScreen}
-Tests: domain/MoneyTest, data/DefaultCategoriesTest
+## Files
+~65 files; see repo tree. Tests: app/src/test/java/app/pocketfree/domain/**.
