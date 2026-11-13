@@ -144,4 +144,31 @@ class CalculationsTest {
         val rates = TestData.rates(AppCurrency.USD, Triple("AED", "USD", "0.2723"))
         assertEquals(2_723L, rates.convert(10_000, "AED"))
     }
+
+    @Test fun balanceFollowsTheSelectedMonth() {
+        val txs = listOf(
+            income(100_000, "2026-10-28"), expense(25_000, "2026-10-30"),
+            income(100_000, "2026-11-01"), expense(15_000, "2026-11-10"),
+            expense(5_000, "2026-12-02")
+        )
+        fun at(date: String) = Calculations.balanceUpTo(txs, LocalDate.parse(date), aed).netMinor
+        assertEquals(0L, at("2026-09-30"))                 // before anything happened
+        assertEquals(75_000L, at("2026-10-31"))            // end of October
+        assertEquals(160_000L, at("2026-11-30"))           // November adds +100,000 -15,000
+        assertEquals(155_000L, at("2026-12-31"))           // December expense included
+        assertEquals(75_000L, at("2026-10-31").let { Calculations.balanceUpTo(txs, LocalDate.of(2026, 10, 31), aed).netMinor })
+    }
+
+    @Test fun balanceOnTheBoundaryDayIncludesThatDay() {
+        val txs = listOf(income(500, "2026-11-30"), income(700, "2026-12-01"))
+        assertEquals(500L, Calculations.balanceUpTo(txs, LocalDate.of(2026, 11, 30), aed).netMinor)
+    }
+
+    @Test fun balanceMatchesAllTimeSummaryWhenNothingIsInTheFuture() {
+        val txs = listOf(income(900, "2026-01-05"), expense(300, "2026-02-05"))
+        assertEquals(
+            Calculations.summarize(txs, null, aed).netMinor,
+            Calculations.balanceUpTo(txs, LocalDate.of(2026, 12, 31), aed).netMinor
+        )
+    }
 }

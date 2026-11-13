@@ -1,0 +1,23 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:translateX="-2.5" android:translateY="1">
+        <path
+            android:fillColor="#000000"
+            android:pathData="M49,26.5 H42.5 a6.5,6.5 0 0 0 -6.5,6.5 V73.5 a6.5,6.5 0 0 0 6.5,6.5 a6.5,6.5 0 0 0 6.5,-6.5 Z" />
+        <!-- square the bowl's top-left so it joins the stem like a real letter P -->
+        <path
+            android:fillColor="#000000"
+            android:pathData="M49,26.5 H60 V33 H49 Z" />
+        <!-- bowl as a ring so the coin reads as a separate dot -->
+        <path
+            android:fillColor="#000000"
+            android:fillType="evenOdd"
+            android:pathData="M42.5,44 a17.5,17.5 0 1 0 35,0 a17.5,17.5 0 1 0 -35,0 z M49.5,44 a10.5,10.5 0 1 0 21,0 a10.5,10.5 0 1 0 -21,0 z" />
+        <path
+            android:fillColor="#000000"
+            android:pathData="M54,44 a6,6 0 1 0 12,0 a6,6 0 1 0 -12,0 z" />
+    </group>
+</vector>

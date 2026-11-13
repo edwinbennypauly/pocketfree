@@ -1,6 +1,6 @@
 # PocketFree - Project Status
 
-_Last updated: 2026-11-12 (complete app written, awaiting first CI build)_
+_Last updated: 2026-11-12 (v0.2.3: P+coin icon, balance follows selected month; app confirmed working on device)_
 
 ## State
 All spec features are implemented in code. **Pure logic is compiled and tested here (104 tests pass with Kotlin 2.0.20). The Android/Compose/Room/Hilt layer has NOT been compiled** (sandbox cannot reach Google Maven); it is verified only by syntax check and review. Expect a first CI build that may show compile errors to fix.
@@ -13,6 +13,7 @@ All spec features are implemented in code. **Pure logic is compiled and tested h
 - Charts are custom Canvas (no chart library). No INTERNET permission. `allowBackup=false`.
 
 ## Decisions
+- Home balance card = running balance up to the END of the selected month (changes when you switch months; current month = everything so far). Monthly income/expenses/savings tiles are for that month only.
 - Budgets: stored per month, carry forward until changed; limit 0 = cleared; category id 0 = overall budget.
 - Categories: renaming/recoloring never touches transactions (FK by id, RESTRICT); delete of a used category archives it.
 - Multi-currency: each transaction keeps original amount+currency; totals convert only with user-entered rates (direct or inverse); no rate = excluded and flagged, never guessed.

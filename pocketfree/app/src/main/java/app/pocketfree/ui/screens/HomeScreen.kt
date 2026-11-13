@@ -80,7 +80,7 @@ class HomeViewModel @Inject constructor(
 
     private fun build(snap: LedgerSnapshot, m: YearMonth): HomeUi {
         val range = DateRange.ofMonth(m)
-        val overall = Calculations.summarize(snap.transactions, null, snap.rates)
+        val overall = Calculations.balanceUpTo(snap.transactions, m.atEndOfMonth(), snap.rates)
         val monthly = Calculations.summarize(snap.transactions, range, snap.rates)
         return HomeUi(
             month = m,
@@ -179,7 +179,12 @@ private fun BalanceCard(ui: HomeUi) {
                 fontWeight = FontWeight.Bold,
                 color = scheme.onPrimaryContainer
             )
-            Text("All income minus all expenses", style = MaterialTheme.typography.bodySmall, color = scheme.onPrimaryContainer)
+            val isCurrent = ui.month == YearMonth.now()
+            Text(
+                if (isCurrent) "All income minus all expenses so far" else "Balance at the end of ${formatMonth(ui.month)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.onPrimaryContainer
+            )
         }
     }
 }

@@ -57,6 +57,26 @@ object Calculations {
         return Summary(income, expense, skipped)
     }
 
+    /**
+     * Running balance: income minus expenses of everything dated on or before [endInclusive].
+     * Used by the Home balance card so it follows the selected month.
+     */
+    fun balanceUpTo(txs: List<Transaction>, endInclusive: LocalDate, rates: RateTable): Summary {
+        var income = 0L
+        var expense = 0L
+        var skipped = 0
+        for (t in txs) {
+            if (t.date.isAfter(endInclusive)) continue
+            val value = rates.convert(t.amountMinor, t.currencyCode)
+            if (value == null) {
+                skipped++
+                continue
+            }
+            if (t.type == TransactionType.INCOME) income += value else expense += value
+        }
+        return Summary(income, expense, skipped)
+    }
+
     /** Totals per category id (largest first). Categories that were deleted still appear under their old id. */
     fun categoryTotals(
         txs: List<Transaction>,
