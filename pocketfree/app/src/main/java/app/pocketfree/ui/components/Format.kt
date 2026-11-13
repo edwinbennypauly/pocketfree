@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import app.pocketfree.domain.AppCurrency
 import app.pocketfree.domain.Money
+import app.pocketfree.domain.TransactionType
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -17,6 +18,28 @@ const val HIDDEN_AMOUNT = "••••"
 @Composable
 fun moneyText(minor: Long, currencyCode: String): String =
     if (LocalHideAmounts.current) HIDDEN_AMOUNT else Money.format(minor, AppCurrency.fromCode(currencyCode))
+
+/** Short form for small tiles (AED 45.42M). Also masked when "Hide amounts" is on. */
+@Composable
+fun compactMoneyText(minor: Long, currencyCode: String): String =
+    if (LocalHideAmounts.current) HIDDEN_AMOUNT else Money.formatCompact(minor, AppCurrency.fromCode(currencyCode))
+
+val TransactionType.displayName: String
+    get() = when (this) {
+        TransactionType.EXPENSE -> "Expense"
+        TransactionType.INCOME -> "Income"
+        TransactionType.INVESTMENT -> "Investment"
+        TransactionType.WITHDRAWAL -> "Withdrawal"
+    }
+
+/** Short verb for chips. */
+val TransactionType.chipLabel: String
+    get() = when (this) {
+        TransactionType.EXPENSE -> "Expense"
+        TransactionType.INCOME -> "Income"
+        TransactionType.INVESTMENT -> "Invest"
+        TransactionType.WITHDRAWAL -> "Withdraw"
+    }
 
 /** Like [moneyText] but with an explicit + or - sign for transaction rows. */
 @Composable

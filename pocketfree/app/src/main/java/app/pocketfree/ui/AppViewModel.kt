@@ -60,7 +60,10 @@ class AppViewModel @Inject constructor(
         val left = backgroundedAt
         if (left != null && SystemClock.elapsedRealtime() - left > LOCK_AFTER_MS) unlocked.value = false
         backgroundedAt = null
-        viewModelScope.launch { repo.runRecurring(LocalDate.now()) }
+        viewModelScope.launch {
+            repo.ensureDefaultCategories()
+            repo.runRecurring(LocalDate.now())
+        }
     }
 
     fun tryUnlock(pin: String, onResult: (Boolean) -> Unit) {

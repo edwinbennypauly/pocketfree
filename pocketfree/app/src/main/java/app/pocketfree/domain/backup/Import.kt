@@ -76,7 +76,9 @@ object ImportValidator {
         val type = when (rawType.trim().lowercase()) {
             "expense" -> TransactionType.EXPENSE
             "income" -> TransactionType.INCOME
-            else -> throw IllegalArgumentException("Type '${rawType.trim()}' must be expense or income.")
+            "investment", "invest" -> TransactionType.INVESTMENT
+            "withdrawal", "withdraw" -> TransactionType.WITHDRAWAL
+            else -> throw IllegalArgumentException("Type '${rawType.trim()}' must be expense, income, investment or withdrawal.")
         }
         if (amountMinor == null) throw IllegalArgumentException("Amount is missing or not a valid positive number.")
         if (amountMinor <= 0) throw IllegalArgumentException("Amount must be greater than zero.")
@@ -187,7 +189,7 @@ object TransactionCsv {
             try {
                 val amountText = col(row, "amount")
                 if (amountText.trim().startsWith("-")) {
-                    throw IllegalArgumentException("Amount must be positive; use the type column for expense or income.")
+                    throw IllegalArgumentException("Amount must be positive; use the type column for expense, income, investment or withdrawal.")
                 }
                 records.add(
                     ImportValidator.build(

@@ -54,6 +54,24 @@ object Money {
 
     fun toDecimal(minor: Long, decimals: Int = 2): BigDecimal = BigDecimal.valueOf(minor, decimals)
 
+    /**
+     * Short form for small tiles: below 100,000 it is the normal format; above it becomes AED 150.5K, AED 45.42M, AED 1.2B.
+     * Never shown as the only place an exact figure lives: full amounts remain on the transaction rows.
+     */
+    fun formatCompact(minor: Long, currency: AppCurrency): String {
+        val abs = toDecimal(minor, currency.decimals).abs()
+        if (abs < BigDecimal(100_000)) return format(minor, currency)
+        val units = listOf(BigDecimal(1_000) to "K", BigDecimal(1_000_000) to "M", BigDecimal(1_000_000_000) to "B")
+        var index = units.indexOfLast { abs >= it.first }
+        var scaled = abs.divide(units[index].first, 2, RoundingMode.HALF_UP)
+        if (scaled >= BigDecimal(1000) && index < units.lastIndex) {
+            index += 1
+            scaled = abs.divide(units[index].first, 2, RoundingMode.HALF_UP)
+        }
+        val text = scaled.stripTrailingZeros().toPlainString()
+        return (if (minor < 0) "-" else "") + "${currency.symbol} $text${units[index].second}"
+    }
+
     /** e.g. 123456 AED -> "AED 1,234.56"; negative -> "-AED 5.00". */
     fun format(minor: Long, currency: AppCurrency): String {
         val formatter = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.US))

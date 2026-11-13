@@ -134,7 +134,9 @@ fun AddEditScreen(onClose: () -> Unit, viewModel: AddEditViewModel = hiltViewMod
     val title = when {
         viewModel.isEditing -> "Edit transaction"
         viewModel.type == TransactionType.EXPENSE -> "Add expense"
-        else -> "Add income"
+        viewModel.type == TransactionType.INCOME -> "Add income"
+        viewModel.type == TransactionType.INVESTMENT -> "Add investment"
+        else -> "Add withdrawal"
     }
 
     ScreenScaffold(
@@ -155,9 +157,25 @@ fun AddEditScreen(onClose: () -> Unit, viewModel: AddEditViewModel = hiltViewMod
             modifier = Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = viewModel.type == TransactionType.EXPENSE, onClick = { viewModel.changeType(TransactionType.EXPENSE) }, label = { Text("Expense") })
-                FilterChip(selected = viewModel.type == TransactionType.INCOME, onClick = { viewModel.changeType(TransactionType.INCOME) }, label = { Text("Income") })
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TransactionType.entries.forEach { option ->
+                    FilterChip(
+                        selected = viewModel.type == option,
+                        onClick = { viewModel.changeType(option) },
+                        label = { Text(option.chipLabel) }
+                    )
+                }
+            }
+            when (viewModel.type) {
+                TransactionType.INVESTMENT -> Text(
+                    "Money you put into investments or savings. It lowers your cash balance but is not an expense.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TransactionType.WITHDRAWAL -> Text(
+                    "Money you take back out of investments. It is not income. If you made a profit, record that part separately as Income > Investment returns.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                else -> {}
             }
 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {

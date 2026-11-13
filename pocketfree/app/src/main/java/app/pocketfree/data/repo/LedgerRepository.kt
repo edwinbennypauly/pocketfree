@@ -14,6 +14,7 @@ import app.pocketfree.data.db.TransactionDao
 import app.pocketfree.data.db.TransactionEntity
 import app.pocketfree.data.db.toDomain
 import app.pocketfree.domain.AppCurrency
+import app.pocketfree.domain.DefaultCategories
 import app.pocketfree.domain.Frequency
 import app.pocketfree.domain.LedgerSnapshot
 import app.pocketfree.domain.OVERALL_BUDGET_ID
@@ -156,6 +157,30 @@ class LedgerRepository @Inject constructor(
     }
 
     // ------------------------------------------------------------------ categories
+
+    /**
+     * Older installs only had expense and income categories. Adds the default investment and withdrawal
+     * categories once (never again, so categories you delete or rename stay that way).
+     */
+    suspend fun ensureDefaultCategories() {
+        if (settings.investmentDefaultsSeeded()) return
+        val existing = categoryDao.getAll()
+        var sort = categoryDao.maxSortOrder()
+        val groups = listOf(
+            TransactionType.INVESTMENT to DefaultCategories.investment,
+            TransactionType.WITHDRAWAL to DefaultCategories.withdrawal
+        )
+        for ((type, seeds) in groups) {
+            if (existing.any { it.type == type }) continue
+            for (seed in seeds) {
+                sort += 1
+                categoryDao.insert(
+                    CategoryEntity(name = seed.name, type = seed.type, iconKey = seed.iconKey, colorArgb = seed.color, isDefault = true, sortOrder = sort)
+                )
+            }
+        }
+        settings.markInvestmentDefaultsSeeded()
+    }
 
     suspend fun saveCategory(id: Long?, name: String, type: TransactionType, iconKey: String, colorArgb: Int): CategoryOutcome {
         val clean = name.trim()

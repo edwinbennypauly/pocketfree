@@ -219,13 +219,13 @@ private fun FilterBar(
         ChipDropdown<TransactionType?>(
             label = "Type",
             selectedText = filter.type?.name?.lowercase()?.replaceFirstChar { it.uppercase() },
-            options = listOf("All types" to null, "Expense" to TransactionType.EXPENSE, "Income" to TransactionType.INCOME),
+            options = listOf<Pair<String, TransactionType?>>("All types" to null) + TransactionType.entries.map { it.displayName to it },
             onSelect = { v -> viewModel.update { it.copy(type = v) } }
         )
         ChipDropdown<Long?>(
             label = "Category",
             selectedText = filter.categoryId?.let { state.categoryMap[it]?.name },
-            options = listOf<Pair<String, Long?>>("All categories" to null) + state.categories.map { it.name + (if (it.type == TransactionType.INCOME) " (income)" else "") to it.id },
+            options = listOf<Pair<String, Long?>>("All categories" to null) + state.categories.map { it.name + (if (it.type != TransactionType.EXPENSE) " (${it.type.displayName.lowercase()})" else "") to it.id },
             onSelect = { v -> viewModel.update { it.copy(categoryId = v) } }
         )
         ChipDropdown<Int?>(
@@ -268,18 +268,24 @@ private fun DetailDialog(
     onDuplicate: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val isExpense = transaction.type == TransactionType.EXPENSE
     AlertDialog(
         onDismissRequest = onClose,
         title = { Text(transaction.description.ifBlank { category?.name ?: "Transaction" }) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    signedMoneyText(transaction.amountMinor, transaction.currencyCode, negative = isExpense),
+                    when (transaction.type) {
+                        TransactionType.EXPENSE -> signedMoneyText(transaction.amountMinor, transaction.currencyCode, negative = true)
+                        TransactionType.INCOME -> signedMoneyText(transaction.amountMinor, transaction.currencyCode, negative = false)
+                        else -> moneyText(transaction.amountMinor, transaction.currencyCode)
+                    },
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
-                Text("${if (isExpense) "Expense" else "Income"} • ${category?.name ?: "Deleted category"}")
+                Text("${transaction.type.displayName} • ${category?.name ?: "Deleted category"}")
+                if (transaction.type == TransactionType.INVESTMENT || transaction.type == TransactionType.WITHDRAWAL) {
+                    Text("Not counted as income or expense.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 Text(formatDate(transaction.date))
                 if (transaction.recurringRuleId != null) Text("Created by a recurring rule")
                 if (transaction.notes.isNotBlank()) Text("Notes: ${transaction.notes}")

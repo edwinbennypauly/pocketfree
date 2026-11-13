@@ -64,4 +64,24 @@ class MoneyTest {
         assertEquals(AppCurrency.AED, AppCurrency.fromCode(null))
         assertEquals(AppCurrency.SAR, AppCurrency.fromCode("SAR"))
     }
+
+    @Test fun compactFormatLeavesNormalAmountsAlone() {
+        assertEquals("AED 410.73", Money.formatCompact(41_073, AppCurrency.AED))
+        assertEquals("AED 99,999.99", Money.formatCompact(9_999_999, AppCurrency.AED))
+        assertEquals("AED 0.00", Money.formatCompact(0, AppCurrency.AED))
+    }
+
+    @Test fun compactFormatShortensBigAmountsForSmallTiles() {
+        assertEquals("AED 100K", Money.formatCompact(10_000_000, AppCurrency.AED))
+        assertEquals("AED 150.5K", Money.formatCompact(15_050_000, AppCurrency.AED))
+        assertEquals("AED 45.42M", Money.formatCompact(4_541_584_400, AppCurrency.AED))   // 45,415,844.00
+        assertEquals("AED 1M", Money.formatCompact(100_000_000, AppCurrency.AED))
+        assertEquals("AED 100B", Money.formatCompact(TransactionValidator.MAX_MINOR, AppCurrency.AED))
+        assertEquals("-AED 2.5M", Money.formatCompact(-250_000_000, AppCurrency.AED))
+        assertEquals("₹ 1.23M", Money.formatCompact(123_400_000, AppCurrency.INR))   // 1,234,000.00
+    }
+
+    @Test fun compactFormatPromotesInsteadOfShowing1000K() {
+        assertEquals("AED 1M", Money.formatCompact(99_999_999, AppCurrency.AED))   // 999,999.99 rounds up to 1M, not "1000K"
+    }
 }

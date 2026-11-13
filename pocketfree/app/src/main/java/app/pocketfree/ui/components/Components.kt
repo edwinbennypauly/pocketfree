@@ -64,6 +64,7 @@ import app.pocketfree.domain.Transaction
 import app.pocketfree.domain.TransactionType
 import app.pocketfree.ui.theme.ExpenseRed
 import app.pocketfree.ui.theme.IncomeGreen
+import app.pocketfree.ui.theme.InvestBlue
 import app.pocketfree.ui.theme.WarningAmber
 import java.time.Instant
 import java.time.LocalDate
@@ -144,7 +145,11 @@ fun TransactionRow(
     modifier: Modifier = Modifier,
     showDate: Boolean = true
 ) {
-    val isExpense = transaction.type == TransactionType.EXPENSE
+    val amountColor = when (transaction.type) {
+        TransactionType.EXPENSE -> ExpenseRed
+        TransactionType.INCOME -> IncomeGreen
+        TransactionType.INVESTMENT, TransactionType.WITHDRAWAL -> InvestBlue
+    }
     Row(
         modifier = modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -160,15 +165,22 @@ fun TransactionRow(
             val sub = buildString {
                 append(category?.name ?: "Deleted category")
                 if (showDate) append(" • ").append(formatDate(transaction.date))
-                if (transaction.recurringRuleId != null) append(" • Recurring")
+                if (transaction.type == TransactionType.INVESTMENT || transaction.type == TransactionType.WITHDRAWAL) append(" • ").append(transaction.type.displayName)
+            if (transaction.recurringRuleId != null) append(" • Recurring")
             }
             Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Text(
-            text = signedMoneyText(transaction.amountMinor, transaction.currencyCode, negative = isExpense),
+            text = when (transaction.type) {
+                TransactionType.EXPENSE -> signedMoneyText(transaction.amountMinor, transaction.currencyCode, negative = true)
+                TransactionType.INCOME -> signedMoneyText(transaction.amountMinor, transaction.currencyCode, negative = false)
+                else -> moneyText(transaction.amountMinor, transaction.currencyCode)
+            },
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.SemiBold,
-            color = if (isExpense) ExpenseRed else IncomeGreen
+            color = amountColor,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }

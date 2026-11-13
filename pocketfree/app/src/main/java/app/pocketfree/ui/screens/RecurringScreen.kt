@@ -172,9 +172,10 @@ private fun RecurringEditor(state: RecurringUi, viewModel: RecurringViewModel, o
         title = { Text("New recurring transaction") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = type == TransactionType.EXPENSE, onClick = { type = TransactionType.EXPENSE; categoryId = null }, label = { Text("Expense") })
-                    FilterChip(selected = type == TransactionType.INCOME, onClick = { type = TransactionType.INCOME; categoryId = null }, label = { Text("Income") })
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TransactionType.entries.forEach { option ->
+                        FilterChip(selected = type == option, onClick = { type = option; categoryId = null }, label = { Text(option.chipLabel) })
+                    }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(

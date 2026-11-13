@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -37,6 +38,7 @@ import app.pocketfree.domain.TransactionType
 import app.pocketfree.ui.components.*
 import app.pocketfree.ui.theme.ExpenseRed
 import app.pocketfree.ui.theme.IncomeGreen
+import app.pocketfree.ui.theme.InvestBlue
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.YearMonth
 import javax.inject.Inject
@@ -52,6 +54,7 @@ data class HomeUi(
     val month: YearMonth,
     val currency: AppCurrency,
     val balanceMinor: Long,
+    val investedToDateMinor: Long,
     val summary: Summary,
     val breakdown: List<CategoryTotal>,
     val categories: Map<Long, Category>,
@@ -85,7 +88,8 @@ class HomeViewModel @Inject constructor(
         return HomeUi(
             month = m,
             currency = snap.defaultCurrency,
-            balanceMinor = overall.netMinor,
+            balanceMinor = overall.balanceMinor,
+            investedToDateMinor = overall.netInvestedMinor,
             summary = monthly,
             breakdown = Calculations.categoryTotals(snap.transactions, range, TransactionType.EXPENSE, snap.rates),
             categories = snap.categoryMap,
@@ -130,6 +134,9 @@ fun HomeScreen(
                 item { MonthSwitcher(state.month, viewModel::previousMonth, viewModel::nextMonth) }
                 item { BalanceCard(state) }
                 item { SummaryRow(state) }
+                if (state.investedToDateMinor != 0L || state.summary.investedMinor != 0L || state.summary.withdrawnMinor != 0L) {
+                    item { InvestmentCard(state) }
+                }
                 if (state.skipped > 0) {
                     item {
                         Text(
@@ -173,15 +180,22 @@ private fun BalanceCard(ui: HomeUi) {
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Total balance", style = MaterialTheme.typography.labelLarge, color = scheme.onPrimaryContainer)
+            val balanceText = moneyText(ui.balanceMinor, ui.currency.code)
             Text(
-                moneyText(ui.balanceMinor, ui.currency.code),
-                style = MaterialTheme.typography.displaySmall,
+                balanceText,
+                maxLines = 1,
+                softWrap = false,
+                style = when {
+                    balanceText.length <= 13 -> MaterialTheme.typography.displaySmall
+                    balanceText.length <= 17 -> MaterialTheme.typography.headlineLarge
+                    else -> MaterialTheme.typography.headlineMedium
+                },
                 fontWeight = FontWeight.Bold,
                 color = scheme.onPrimaryContainer
             )
             val isCurrent = ui.month == YearMonth.now()
             Text(
-                if (isCurrent) "All income minus all expenses so far" else "Balance at the end of ${formatMonth(ui.month)}",
+                if (isCurrent) "Cash left after expenses and investing, so far" else "Balance at the end of ${formatMonth(ui.month)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = scheme.onPrimaryContainer
             )
@@ -204,11 +218,13 @@ private fun MiniStat(label: String, minor: Long, currency: AppCurrency, color: C
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
-                moneyText(minor, currency.code),
+                compactMoneyText(minor, currency.code),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = color,
-                maxLines = 1
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -236,7 +252,7 @@ private fun BreakdownCard(ui: HomeUi) {
                             val category = ui.categories[total.categoryId]
                             LegendRow(colorFor(category), category?.name ?: "Deleted category", moneyText(total.totalMinor, ui.currency.code))
                         }
-                        if (otherTotal > 0) LegendRow(otherColor, "Other categories", moneyText(otherTotal, ui.currency.code))
+                        if (otherTotal > 0) LegendRow(otherColor, "+${ui.breakdown.size - 5} more", moneyText(otherTotal, ui.currency.code))
                     }
                 }
             }
@@ -288,6 +304,36 @@ private fun QuickActions(onAdd: (TransactionType) -> Unit, onOpenTransactions: (
         OutlinedButton(onClick = onOpenTransactions, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp)) {
             Icon(Icons.Rounded.ReceiptLong, contentDescription = null, modifier = Modifier.size(18.dp))
             Text("All", maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun InvestmentCard(ui: HomeUi) {
+    AppCard {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth()) {
+                Column(Modifier.weight(1f)) {
+                    Text("Invested this month", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        compactMoneyText(ui.summary.netInvestedMinor, ui.currency.code),
+                        style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = InvestBlue,
+                        maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("Total invested to date", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        compactMoneyText(ui.investedToDateMinor, ui.currency.code),
+                        style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = InvestBlue,
+                        maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            Text(
+                "Money you put into investments is not an expense and not income. Profit you earn is income.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

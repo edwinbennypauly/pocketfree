@@ -97,13 +97,11 @@ fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = hiltVi
         val active = categories.filter { !it.isArchived }
         val archived = categories.filter { it.isArchived }
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = 24.dp)) {
-            item { SettingsHeader("Expense categories") }
-            categoryRows(active.filter { it.type == TransactionType.EXPENSE }) { c ->
-                editor = CategoryEditor(c.id, c.name, c.type, c.iconKey, c.colorArgb)
-            }
-            item { SettingsHeader("Income categories") }
-            categoryRows(active.filter { it.type == TransactionType.INCOME }) { c ->
-                editor = CategoryEditor(c.id, c.name, c.type, c.iconKey, c.colorArgb)
+            TransactionType.entries.forEach { sectionType ->
+                item(key = "header-${sectionType.name}") { SettingsHeader("${sectionType.displayName} categories") }
+                categoryRows(active.filter { it.type == sectionType }) { c ->
+                    editor = CategoryEditor(c.id, c.name, c.type, c.iconKey, c.colorArgb)
+                }
             }
             if (archived.isNotEmpty()) {
                 item { SettingsHeader("Archived (kept for your history)") }
@@ -189,9 +187,10 @@ private fun CategoryEditorDialog(
                     supportingText = { error?.let { Text(it) } }
                 )
                 if (isNew) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(selected = type == TransactionType.EXPENSE, onClick = { type = TransactionType.EXPENSE }, label = { Text("Expense") })
-                        FilterChip(selected = type == TransactionType.INCOME, onClick = { type = TransactionType.INCOME }, label = { Text("Income") })
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TransactionType.entries.forEach { option ->
+                            FilterChip(selected = type == option, onClick = { type = option }, label = { Text(option.chipLabel) })
+                        }
                     }
                 }
                 Text("Icon", style = MaterialTheme.typography.labelLarge)

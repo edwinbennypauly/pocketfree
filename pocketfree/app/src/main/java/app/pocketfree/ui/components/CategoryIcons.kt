@@ -1,12 +1,15 @@
 package app.pocketfree.ui.components
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.Apartment
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Checkroom
+import androidx.compose.material.icons.rounded.Diamond
 import androidx.compose.material.icons.rounded.DirectionsBus
 import androidx.compose.material.icons.rounded.FamilyRestroom
 import androidx.compose.material.icons.rounded.Fastfood
@@ -25,6 +28,7 @@ import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.ShoppingBag
 import androidx.compose.material.icons.rounded.ShoppingBasket
+import androidx.compose.material.icons.rounded.ShowChart
 import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Storefront
@@ -68,6 +72,10 @@ object CategoryIcons {
         "phone" to Icons.Rounded.Phone,
         "cake" to Icons.Rounded.Cake,
         "fastfood" to Icons.Rounded.Fastfood,
+        "show_chart" to Icons.Rounded.ShowChart,
+        "diamond" to Icons.Rounded.Diamond,
+        "account_balance" to Icons.Rounded.AccountBalance,
+        "apartment" to Icons.Rounded.Apartment,
         "category" to Icons.Rounded.Category
     )
 

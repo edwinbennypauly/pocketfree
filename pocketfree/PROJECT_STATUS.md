@@ -1,6 +1,6 @@
 # PocketFree - Project Status
 
-_Last updated: 2026-11-12 (v0.2.3: P+coin icon, balance follows selected month; app confirmed working on device)_
+_Last updated: 2026-11-13 (v0.3.0: investment/withdrawal transaction types, compact tiles, balance follows month; app confirmed working on device)_
 
 ## State
 All spec features are implemented in code. **Pure logic is compiled and tested here (104 tests pass with Kotlin 2.0.20). The Android/Compose/Room/Hilt layer has NOT been compiled** (sandbox cannot reach Google Maven); it is verified only by syntax check and review. Expect a first CI build that may show compile errors to fix.
@@ -13,6 +13,10 @@ All spec features are implemented in code. **Pure logic is compiled and tested h
 - Charts are custom Canvas (no chart library). No INTERNET permission. `allowBackup=false`.
 
 ## Decisions
+- Four transaction types: EXPENSE, INCOME, INVESTMENT (money moved into investments/savings), WITHDRAWAL (money taken back out). Investment/withdrawal are transfers: never counted as income or expense, excluded from budgets, expense charts, averages and comparisons. Profit on investments is INCOME (default category "Investment returns").
+- Total balance = cash = income - expenses - (invested - withdrawn). "Savings" tile = income - expenses (before investing). Analytics adds Savings rate and Net invested.
+- Default Investment/Withdrawal categories (8 each) are added to existing installs once via a DataStore flag (no DB schema change, so no migration).
+- Small tiles use compact amounts (AED 45.42M) so big numbers never disappear; exact amounts stay on transaction rows and the balance card.
 - Home balance card = running balance up to the END of the selected month (changes when you switch months; current month = everything so far). Monthly income/expenses/savings tiles are for that month only.
 - Budgets: stored per month, carry forward until changed; limit 0 = cleared; category id 0 = overall budget.
 - Categories: renaming/recoloring never touches transactions (FK by id, RESTRICT); delete of a used category archives it.

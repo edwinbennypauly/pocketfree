@@ -34,11 +34,28 @@ object DefaultCategories {
         CategorySeed("Salary", TransactionType.INCOME, "payments", c(0xFF16A34A)),
         CategorySeed("Freelance", TransactionType.INCOME, "work", c(0xFF0D9488)),
         CategorySeed("Business", TransactionType.INCOME, "storefront", c(0xFF2563EB)),
-        CategorySeed("Investments", TransactionType.INCOME, "trending_up", c(0xFF7C3AED)),
+        CategorySeed("Investment returns", TransactionType.INCOME, "trending_up", c(0xFF7C3AED)),
         CategorySeed("Interest", TransactionType.INCOME, "savings", c(0xFF0891B2)),
         CategorySeed("Gifts", TransactionType.INCOME, "card_giftcard", c(0xFFDB2777)),
         CategorySeed("Other", TransactionType.INCOME, "category", c(0xFF94A3B8))
     )
 
-    val all: List<CategorySeed> get() = expense + income
+    private fun investmentSeeds(type: TransactionType) = listOf(
+        CategorySeed("Stocks", type, "show_chart", c(0xFF3B82F6)),
+        CategorySeed("Mutual funds & ETFs", type, "trending_up", c(0xFF6366F1)),
+        CategorySeed("Gold & metals", type, "diamond", c(0xFFEAB308)),
+        CategorySeed("Crypto", type, "bolt", c(0xFFF97316)),
+        CategorySeed("Fixed deposits & bonds", type, "account_balance", c(0xFF0EA5E9)),
+        CategorySeed("Real estate", type, "apartment", c(0xFF14B8A6)),
+        CategorySeed("Retirement & pension", type, "savings", c(0xFF8B5CF6)),
+        CategorySeed("Other investment", type, "category", c(0xFF94A3B8))
+    )
+
+    /** Where money goes when you invest (not an expense). */
+    val investment = investmentSeeds(TransactionType.INVESTMENT)
+
+    /** Where money comes back from when you withdraw (not income). */
+    val withdrawal = investmentSeeds(TransactionType.WITHDRAWAL)
+
+    val all: List<CategorySeed> get() = expense + income + investment + withdrawal
 }

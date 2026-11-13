@@ -7,8 +7,28 @@ import java.time.YearMonth
 import java.time.temporal.ChronoUnit
 
 /** Totals are in the default (base) currency. Transactions with no usable exchange rate are counted in [skipped]. */
-data class Summary(val incomeMinor: Long, val expenseMinor: Long, val skipped: Int) {
+data class Summary(
+    val incomeMinor: Long,
+    val expenseMinor: Long,
+    val skipped: Int,
+    val investedMinor: Long = 0,
+    val withdrawnMinor: Long = 0
+) {
+    /** Savings: income minus expenses. Investments are not subtracted here (they are what savings get used for). */
     val netMinor: Long get() = incomeMinor - expenseMinor
+
+    /** Money moved into investments minus money taken back out. */
+    val netInvestedMinor: Long get() = investedMinor - withdrawnMinor
+
+    /** Cash left: income - expenses - net invested. This is the "Total balance". */
+    val balanceMinor: Long get() = netMinor - netInvestedMinor
+
+    /** Share of income kept after expenses, one decimal (can be negative when overspending). Null without income. */
+    fun savingsRatePercent(): BigDecimal? {
+        if (incomeMinor <= 0) return null
+        return BigDecimal.valueOf(netMinor).multiply(BigDecimal(100))
+            .divide(BigDecimal.valueOf(incomeMinor), 1, RoundingMode.HALF_UP)
+    }
 }
 
 data class CategoryTotal(val categoryId: Long, val totalMinor: Long)
@@ -44,6 +64,8 @@ object Calculations {
     fun summarize(txs: List<Transaction>, range: DateRange?, rates: RateTable): Summary {
         var income = 0L
         var expense = 0L
+        var invested = 0L
+        var withdrawn = 0L
         var skipped = 0
         for (t in txs) {
             if (range != null && t.date !in range) continue
@@ -52,18 +74,25 @@ object Calculations {
                 skipped++
                 continue
             }
-            if (t.type == TransactionType.INCOME) income += value else expense += value
+            when (t.type) {
+                TransactionType.INCOME -> income += value
+                TransactionType.EXPENSE -> expense += value
+                TransactionType.INVESTMENT -> invested += value
+                TransactionType.WITHDRAWAL -> withdrawn += value
+            }
         }
-        return Summary(income, expense, skipped)
+        return Summary(income, expense, skipped, invested, withdrawn)
     }
 
     /**
-     * Running balance: income minus expenses of everything dated on or before [endInclusive].
+     * Running cash balance (income - expenses - net invested) of everything dated on or before [endInclusive].
      * Used by the Home balance card so it follows the selected month.
      */
     fun balanceUpTo(txs: List<Transaction>, endInclusive: LocalDate, rates: RateTable): Summary {
         var income = 0L
         var expense = 0L
+        var invested = 0L
+        var withdrawn = 0L
         var skipped = 0
         for (t in txs) {
             if (t.date.isAfter(endInclusive)) continue
@@ -72,9 +101,14 @@ object Calculations {
                 skipped++
                 continue
             }
-            if (t.type == TransactionType.INCOME) income += value else expense += value
+            when (t.type) {
+                TransactionType.INCOME -> income += value
+                TransactionType.EXPENSE -> expense += value
+                TransactionType.INVESTMENT -> invested += value
+                TransactionType.WITHDRAWAL -> withdrawn += value
+            }
         }
-        return Summary(income, expense, skipped)
+        return Summary(income, expense, skipped, invested, withdrawn)
     }
 
     /** Totals per category id (largest first). Categories that were deleted still appear under their old id. */

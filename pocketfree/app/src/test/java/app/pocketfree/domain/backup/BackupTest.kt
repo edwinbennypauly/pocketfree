@@ -68,7 +68,7 @@ class BackupTest {
         assertEquals(2, p.transactions.size)
         assertEquals(6, p.errors.size)
         assertTrue(p.errors[0].startsWith("Row 2:") && p.errors[0].contains("yyyy-MM-dd"))
-        assertTrue(p.errors[1].contains("expense or income")); assertTrue(p.errors[3].contains("positive")); assertTrue(p.errors[4].contains("greater than zero"))
+        assertTrue(p.errors[1].contains("expense, income")); assertTrue(p.errors[3].contains("positive")); assertTrue(p.errors[4].contains("greater than zero"))
     }
 
     @Test fun csvWithMissingRequiredColumnsIsRejectedUpFront() {
@@ -167,5 +167,54 @@ class BackupTest {
     @Test fun emptyBackupIsValid() {
         val p = BackupJson.parse(BackupJson.export(LedgerSnapshot(emptyList(), emptyList(), emptyList(), emptyList(), aed, AppCurrency.AED), "t"), "AED")
         assertNull(p.fatalError); assertTrue(p.transactions.isEmpty()); assertFalse(p.errors.isNotEmpty())
+    }
+}
+
+class InvestmentBackupTest {
+    private val sample = listOf(
+        TestData.invest(300_000, "2026-11-10", id = 1),
+        TestData.withdraw(50_000, "2026-11-20", id = 2),
+        TestData.income(20_000, "2026-11-25", TestData.returns, "Dividend", id = 3),
+        TestData.expense(1_250, "2026-11-10", TestData.food, "Lunch", id = 4)
+    )
+    private val cats = (TestData.categories + TestData.stocks + TestData.stocksOut + TestData.returns)
+
+    @Test fun csvRoundTripKeepsInvestmentAndWithdrawalTypes() {
+        val csv = TransactionCsv.export(sample, cats.associateBy { it.id })
+        assertTrue(csv.contains(",investment,")); assertTrue(csv.contains(",withdrawal,"))
+        val p = TransactionCsv.parse(csv, "AED")
+        assertTrue(p.errors.toString(), p.errors.isEmpty())
+        assertEquals(listOf(TransactionType.EXPENSE, TransactionType.INVESTMENT, TransactionType.WITHDRAWAL, TransactionType.INCOME).toSet(), p.transactions.map { it.type }.toSet())
+        assertEquals(300_000L, p.transactions.first { it.type == TransactionType.INVESTMENT }.amountMinor)
+    }
+
+    @Test fun csvAcceptsFriendlyTypeNames() {
+        val p = TransactionCsv.parse("date,type,amount,category\n2026-11-01,Invest,100,Stocks\n2026-11-02,withdraw,50,Stocks\n", "AED")
+        assertEquals(listOf(TransactionType.INVESTMENT, TransactionType.WITHDRAWAL), p.transactions.map { it.type })
+    }
+
+    @Test fun reImportedInvestmentsAreDuplicatesAndSameNamedCategoriesStaySeparatePerType() {
+        val csv = TransactionCsv.export(sample, cats.associateBy { it.id })
+        val records = TransactionCsv.parse(csv, "AED").transactions
+        val plan = ImportPlanner.plan(records, sample, cats)
+        assertEquals(0, plan.toAdd.size); assertEquals(4, plan.duplicates.size)
+        val fresh = ImportPlanner.plan(records, emptyList(), TestData.categories)
+        assertEquals(setOf(NewCategory("Stocks", TransactionType.INVESTMENT), NewCategory("Stocks", TransactionType.WITHDRAWAL), NewCategory("Investment returns", TransactionType.INCOME)), fresh.newCategories.toSet())
+    }
+
+    @Test fun jsonBackupRoundTripsInvestmentCategoriesAndTransactions() {
+        val snap = LedgerSnapshot(cats, sample, emptyList(), emptyList(), TestData.aed, AppCurrency.AED)
+        val p = BackupJson.parse(BackupJson.export(snap, "t"), "AED")
+        assertNull(p.fatalError); assertTrue(p.errors.toString(), p.errors.isEmpty())
+        assertEquals(4, p.transactions.size)
+        assertEquals(2, p.categories.count { it.name == "Stocks" })
+        assertTrue(p.categories.any { it.type == TransactionType.WITHDRAWAL })
+    }
+
+    @Test fun oldBackupsWithOnlyTwoTypesStillLoad() {
+        val json = """{"version":1,"categories":[{"name":"Food","type":"EXPENSE"}],
+            "transactions":[{"date":"2026-11-01","type":"EXPENSE","amountMinor":500,"currency":"AED","category":"Food"}]}"""
+        val p = BackupJson.parse(json, "AED")
+        assertEquals(1, p.transactions.size); assertTrue(p.errors.isEmpty())
     }
 }

@@ -33,6 +33,7 @@ import app.pocketfree.domain.TransactionType
 import app.pocketfree.ui.components.*
 import app.pocketfree.ui.theme.ExpenseRed
 import app.pocketfree.ui.theme.IncomeGreen
+import app.pocketfree.ui.theme.InvestBlue
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.YearMonth
@@ -212,16 +213,32 @@ private fun StatsGrid(ui: AnalyticsUi) {
     val topName = s.topCategory?.let { ui.categories[it.categoryId]?.name ?: "Deleted category" } ?: "—"
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatCard("Total expenses", moneyText(s.summary.expenseMinor, code), ExpenseRed, Modifier.weight(1f))
-            StatCard("Total income", moneyText(s.summary.incomeMinor, code), IncomeGreen, Modifier.weight(1f))
+            StatCard("Total expenses", compactMoneyText(s.summary.expenseMinor, code), ExpenseRed, Modifier.weight(1f))
+            StatCard("Total income", compactMoneyText(s.summary.incomeMinor, code), IncomeGreen, Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatCard("Net savings", moneyText(s.summary.netMinor, code), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-            StatCard("Avg. daily spending", moneyText(s.averageDailyMinor, code), MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
+            StatCard("Net savings", compactMoneyText(s.summary.netMinor, code), MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+            StatCard("Avg. daily spending", compactMoneyText(s.averageDailyMinor, code), MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatCard("Highest expense", if (s.highestExpense == null) "—" else moneyText(s.highestExpenseMinor, code), MaterialTheme.colorScheme.onSurface, Modifier.weight(1f), caption = ui.highestExpenseLabel)
-            StatCard("Top category", topName, MaterialTheme.colorScheme.onSurface, Modifier.weight(1f), caption = s.topCategory?.let { moneyText(it.totalMinor, code) } ?: "")
+            StatCard("Highest expense", if (s.highestExpense == null) "—" else compactMoneyText(s.highestExpenseMinor, code), MaterialTheme.colorScheme.onSurface, Modifier.weight(1f), caption = ui.highestExpenseLabel)
+            StatCard("Top category", topName, MaterialTheme.colorScheme.onSurface, Modifier.weight(1f), caption = s.topCategory?.let { compactMoneyText(it.totalMinor, code) } ?: "")
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StatCard(
+                "Savings rate",
+                s.summary.savingsRatePercent()?.let { "${it.toPlainString()}%" } ?: "—",
+                MaterialTheme.colorScheme.primary,
+                Modifier.weight(1f),
+                caption = "of income kept"
+            )
+            StatCard(
+                "Net invested",
+                compactMoneyText(s.summary.netInvestedMinor, code),
+                InvestBlue,
+                Modifier.weight(1f),
+                caption = if (s.summary.withdrawnMinor > 0) "Withdrawn ${compactMoneyText(s.summary.withdrawnMinor, code)}" else "Not income or expense"
+            )
         }
     }
 }
@@ -231,7 +248,7 @@ private fun StatCard(label: String, value: String, valueColor: Color, modifier: 
     AppCard(modifier) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = valueColor, maxLines = 1)
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = valueColor, maxLines = 1, softWrap = false)
             if (caption.isNotEmpty()) Text(caption, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
     }

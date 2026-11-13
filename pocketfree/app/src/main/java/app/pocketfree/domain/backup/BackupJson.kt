@@ -86,7 +86,7 @@ object BackupJson {
             val name = (m["name"] as? String)?.trim().orEmpty()
             val type = parseType(m["type"] as? String)
             val color = (m["colorArgb"] as? Long)?.toInt() ?: 0xFF94A3B8.toInt()
-            if (name.isEmpty() || type == null) { errors.add("Category ${i + 1}: needs a name and a type of EXPENSE or INCOME."); continue }
+            if (name.isEmpty() || type == null) { errors.add("Category ${i + 1}: needs a name and a type (EXPENSE, INCOME, INVESTMENT or WITHDRAWAL)."); continue }
             categories.add(BackupCategory(name, type, (m["iconKey"] as? String) ?: "category", color, (m["archived"] as? Boolean) ?: false))
         }
 
@@ -146,6 +146,8 @@ object BackupJson {
     private fun parseType(raw: String?): TransactionType? = when (raw?.trim()?.uppercase()) {
         "EXPENSE" -> TransactionType.EXPENSE
         "INCOME" -> TransactionType.INCOME
+        "INVESTMENT" -> TransactionType.INVESTMENT
+        "WITHDRAWAL" -> TransactionType.WITHDRAWAL
         else -> null
     }
 }

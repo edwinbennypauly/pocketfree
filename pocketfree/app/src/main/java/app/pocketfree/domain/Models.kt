@@ -3,7 +3,13 @@ package app.pocketfree.domain
 import java.time.LocalDate
 import java.time.YearMonth
 
-enum class TransactionType { EXPENSE, INCOME }
+/**
+ * EXPENSE and INCOME are what you earn and spend.
+ * INVESTMENT (money you put into investments/savings) and WITHDRAWAL (money you take back out) are transfers
+ * between your cash and your investments: they are neither income nor expense, so they never inflate either.
+ * Profit you make on investments is real income: record it as INCOME (e.g. "Investment returns").
+ */
+enum class TransactionType { EXPENSE, INCOME, INVESTMENT, WITHDRAWAL }
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 

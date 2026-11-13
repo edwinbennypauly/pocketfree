@@ -30,6 +30,7 @@ class SettingsRepository @Inject constructor(
         val THEME = stringPreferencesKey("theme_mode")
         val CURRENCY = stringPreferencesKey("default_currency")
         val ACCENT = stringPreferencesKey("accent_theme")
+        val INVEST_SEEDED = booleanPreferencesKey("investment_defaults_seeded")
         val HIDE_AMOUNTS = booleanPreferencesKey("hide_amounts")
         val BIOMETRIC = booleanPreferencesKey("biometric_enabled")
         val PIN_HASH = stringPreferencesKey("pin_hash")
@@ -51,6 +52,10 @@ class SettingsRepository @Inject constructor(
     val hideAmounts: Flow<Boolean> = data.map { it[Keys.HIDE_AMOUNTS] ?: false }
     val biometricEnabled: Flow<Boolean> = data.map { it[Keys.BIOMETRIC] ?: false }
     val pinConfigured: Flow<Boolean> = data.map { it[Keys.PIN_HASH] != null && it[Keys.PIN_SALT] != null }
+
+    /** One-time flag so the new Investment/Withdrawal categories are added to existing installs exactly once. */
+    suspend fun investmentDefaultsSeeded(): Boolean = data.first()[Keys.INVEST_SEEDED] ?: false
+    suspend fun markInvestmentDefaultsSeeded() { context.settingsDataStore.edit { it[Keys.INVEST_SEEDED] = true } }
 
     suspend fun setThemeMode(mode: ThemeMode) { context.settingsDataStore.edit { it[Keys.THEME] = mode.name } }
     suspend fun setAccent(accent: AccentTheme) { context.settingsDataStore.edit { it[Keys.ACCENT] = accent.name } }

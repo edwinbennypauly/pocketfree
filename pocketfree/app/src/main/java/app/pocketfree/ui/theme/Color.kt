@@ -11,6 +11,8 @@ import app.pocketfree.domain.AccentTheme
 val IncomeGreen = Color(0xFF16A34A)
 val ExpenseRed = Color(0xFFDC2626)
 val WarningAmber = Color(0xFFF59E0B)
+/** Investments and withdrawals: money moved between cash and investments, not income or expense. */
+val InvestBlue = Color(0xFF3B82F6)
 
 /** One accent: strong primary + tinted container + tinted backgrounds, for light and dark. */
 class AccentPalette(
